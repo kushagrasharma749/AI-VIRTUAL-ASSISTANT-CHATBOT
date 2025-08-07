@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title>Chatbot with Voice Command</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            overflow: hidden;
+            background-color: #f1f1f1;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Background Video */
+        .background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        .chat-container {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            transition: bottom 0.3s ease-in-out;
+        }
+
+        /* Left side for history */
+        .history {
+            width: 30%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .history .message {
+            background-color: #e0e0e0;
+            color: black;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        /* Right side for chatbox */
+        .chatbox-container {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chatbox {
+            list-style: none;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            background-color: transparent;
+            flex-grow: 1;
+            margin-bottom: 10px;
+        }
+
+        .chatbox .chat {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chatbox .chat p {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        .chatbox .chat.incoming p {
+            background-color: #e0e0e0;
+            color: black;
+        }
+
+        .chat-input {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid #ddd;
+            width: 100%;
+        }
+
+        .chat-input textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-input textarea:focus {
+            outline: none;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .chatbot-toggler {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007BFF;
+            color: white;
+            padding: 20px;
+            border-radius: 50%;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chatbot-toggler span {
+            font-size: 36px;
+        }
+
+        /* Close Button (cross) */
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 36px;
+            color: white;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .chat-container.opened {
+            display: flex;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #121212;
+        }
+
+        .chat-container.dark-mode {
+            background-color: rgba(33, 33, 33, 0.8);
+        }
+
+        .history.dark-mode {
+            background-color: rgba(33, 33, 33, 0.7);
+            color: white;
+        }
+
+        .history .message.dark-mode {
+            background-color: #3a3a3a;
+            color: white;
+        }
+
+        .chatbox .chat.incoming p.dark-mode {
+            background-color: #3a3a3a;
+            color: white;
+        }
+
+        .chatbox .chat p.dark-mode {
+            background-color: #1f80e0;
+            color: white;
+        }
+
+        .chat-input.dark-mode {
+            background-color: rgba(33, 33, 33, 0.7);
+        }
+
+        .chat-input textarea.dark-mode {
+            background-color: #444;
+            color: white;
+            border: 1px solid #666;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 10px;
+            right: 70px;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            z-index: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 3D Background Video -->
+    <video class="background-video" autoplay muted loop>
+        <source src="chatbot.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <button class="chatbot-toggler">
+        <span class="material-symbols-rounded">mode_comment</span>
+    </button>
+
+    <button class="theme-toggle-btn">🌙</button>
+
+    <div class="chat-container">
+        <button class="close-btn">×</button> <!-- Close button (cross) -->
+        
+        <!-- Left side: History -->
+        <div class="history">
+            <div class="message">Welcome to the chatbot!</div>
+        </div>
+
+        <!-- Right side: Chatbox -->
+        <div class="chatbox-container">
+            <ul class="chatbox">
+                <li class="chat incoming">
+                    <span class="material-symbols-outlined">smart_toy</span>
+                    <p>Hi there 👋<br>How can I help you today?</p>
+                </li>
+            </ul>
+            <div class="chat-input">
+                <textarea id="message-input" placeholder="Enter a message..." spellcheck="false" required></textarea>
+                <div class="button-container">
+                    <span id="send-btn" class="material-symbols-rounded">send</span>
+                    <span id="voice-btn" class="material-symbols-rounded">mic</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const sendBtn = document.getElementById("send-btn");
+            const voiceBtn = document.getElementById("voice-btn");
+            const chatbox = document.querySelector(".chatbox");
+            const history = document.querySelector(".history");
+            const messageInput = document.getElementById("message-input");
+            const chatbot = document.querySelector(".chat-container");
+            const toggleBtn = document.querySelector(".chatbot-toggler");
+            const closeBtn = document.querySelector(".close-btn");
+            const themeToggleBtn = document.querySelector(".theme-toggle-btn");
+
+            // Function to send message
+            function sendMessage(message) {
+                if (!message.trim()) return;
+
+                let userMsg = document.createElement("li");
+                userMsg.classList.add("chat", "outgoing");
+                userMsg.innerHTML = `<p>${message}</p>`;
+                chatbox.appendChild(userMsg);
+
+                let historyMsg = document.createElement("div");
+                historyMsg.classList.add("message");
+                historyMsg.textContent = `You: ${message}`;
+                history.appendChild(historyMsg);
+
+                let botMsg = document.createElement("li");
+                botMsg.classList.add("chat", "incoming");
+                botMsg.innerHTML = `<span class="material-symbols-outlined">smart_toy</span><p>Thanks for reaching out!</p>`;
+                chatbox.appendChild(botMsg);
+
+                let botHistoryMsg = document.createElement("div");
+                botHistoryMsg.classList.add("message");
+                botHistoryMsg.textContent = `Bot: Thanks for reaching out!`;
+                history.appendChild(botHistoryMsg);
+
+                speakMessage("Thanks for reaching out!");
+
+                chatbox.scrollTop = chatbox.scrollHeight;
+                messageInput.value = "";
+            }
+
+            sendBtn.addEventListener("click", () => {
+                sendMessage(messageInput.value);
+            });
+
+            messageInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    sendMessage(messageInput.value);
+                    e.preventDefault();
+                }
+            });
+
+            voiceBtn.addEventListener("click", () => {
+                if (!('webkitSpeechRecognition' in window)) {
+                    alert("Your browser does not support speech recognition");
+                    return;
+                }
+
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = "en-US";
+
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    messageInput.value = transcript;
+                    sendMessage(transcript);
+                };
+            });
+
+            toggleBtn.addEventListener("click", () => {
+                chatbot.classList.toggle("opened");
+            });
+
+            closeBtn.addEventListener("click", () => {
+                chatbot.classList.remove("opened");
+            });
+
+            function speakMessage(message) {
+                const speech = new SpeechSynthesisUtterance(message);
+                speech.lang = "en-US";
+                window.speechSynthesis.speak(speech);
+            }
+
+            // Theme Toggle Button functionality
+            themeToggleBtn.addEventListener("click", () => {
+                document.body.classList.toggle("dark-mode");
+                document.querySelector(".chat-container").classList.toggle("dark-mode");
+                document.querySelector(".history").classList.toggle("dark-mode");
+                document.querySelector(".chatbox").classList.toggle("dark-mode");
+                document.querySelector(".chat-input").classList.toggle("dark-mode");
+                document.querySelector("textarea").classList.toggle("dark-mode");
+                themeToggleBtn.textContent = document.body.classList.contains("dark-mode") ? "🌞" : "🌙";
+            });
+        });
+    </script>
+</body>
+</html>
